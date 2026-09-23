@@ -48,6 +48,7 @@ flowchart LR
     A --> B
     B --> DB
     B --> R
+```
 
 ## 4. Модель данных (ERD, 3NF)
 
