@@ -114,3 +114,25 @@ flowchart LR
 
 Картинка ER-диаграммы доступна здесь: ![erd](erd.png)
 
+# REST API
+
+## Таблица эндпоинтов
+| Метод | URI | Описание | Доступ | Ожидаемый код |
+|---|---|---|---|---|
+| POST | `/api/v1/auth/register` | Регистрация пользователя | Все | 201 Created |
+| POST | `/api/v1/auth/login` | Вход в систему | Все | 200 OK |
+| GET | `/api/v1/recipes` | Получение списка рецептов | Все | 200 OK |
+| GET | `/api/v1/recipes/{id}` | Получение рецепта | Все | 200 OK |
+| POST | `/api/v1/recipes` | Создание рецепта | Кулинар | 201 Created |
+| PUT | `/api/v1/recipes/{id}` | Полное обновление рецепта | Кулинар | 200 OK |
+| DELETE | `/api/v1/recipes/{id}` | Удаление рецепта | Кулинар | 204 No Content |
+| PATCH | `/api/v1/recipes/{id}/status` | Изменение статуса рецепта | Шеф-редактор | 200 OK |
+| POST | `/api/v1/recipes/{id}/calculations` | Расчёт ингредиентов под количество порций | Авторизованный | 200 OK |
+| GET | `/api/v1/categories` | Получение категорий | Все | 200 OK |
+| GET | `/api/v1/ingredients` | Получение ингредиентов | Авторизованный | 200 OK |
+| POST | `/api/v1/shopping-lists` | Создание списка покупок | Авторизованный | 201 Created |
+| GET | `/api/v1/shopping-lists` | Получение списков покупок пользователя | Авторизованный | 200 OK |
+| GET | `/api/v1/shopping-lists/{id}` | Получение списка покупок | Авторизованный | 200 OK |
+| DELETE | `/api/v1/shopping-lists/{id}` | Удаление списка покупок | Авторизованный | 204 No Content |
+
+
