@@ -1,0 +1,782 @@
+openapi: 3.0.3
+info:
+  title: Recipe Sharing and Menu Planning API
+  version: 1.0.0
+  description: >
+    REST API платформы для публикации и модерации рецептов, пересчёта
+    ингредиентов и формирования списков покупок.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Локальный сервер разработки
+
+tags:
+  - name: Authentication
+    description: Регистрация и вход
+  - name: Recipes
+    description: Рецепты и их модерация
+  - name: Categories
+    description: Категории рецептов
+  - name: Ingredients
+    description: Справочник ингредиентов
+  - name: Shopping lists
+    description: Списки покупок
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Регистрация кулинара
+      operationId: registerAuthor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Учётная запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Вход в систему
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /recipes:
+    get:
+      tags: [Recipes]
+      summary: Получить список опубликованных рецептов
+      operationId: listRecipes
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы, начиная с 1
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Количество записей на странице
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: category_id
+          in: query
+          description: Фильтр по идентификатору категории
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Список рецептов
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, page, limit, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Recipe'
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+                  total:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Recipes]
+      summary: Создать рецепт
+      operationId: createRecipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeWriteRequest'
+      responses:
+        '201':
+          description: Рецепт создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Категория или ингредиент не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /recipes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/RecipeId'
+    get:
+      tags: [Recipes]
+      summary: Получить рецепт по идентификатору
+      operationId: getRecipe
+      responses:
+        '200':
+          description: Рецепт найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags: [Recipes]
+      summary: Полностью обновить собственный рецепт
+      operationId: replaceRecipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeWriteRequest'
+      responses:
+        '200':
+          description: Рецепт обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Recipes]
+      summary: Удалить собственный рецепт
+      operationId: deleteRecipe
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Рецепт удалён; тело ответа отсутствует
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /recipes/{id}/status:
+    parameters:
+      - $ref: '#/components/parameters/RecipeId'
+    patch:
+      tags: [Recipes]
+      summary: Опубликовать или отклонить рецепт
+      description: Доступно шеф-редактору. Для статуса rejected необходимо передать причину отклонения.
+      operationId: moderateRecipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerationRequest'
+      responses:
+        '200':
+          description: Статус рецепта изменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /recipes/{id}/calculations:
+    parameters:
+      - $ref: '#/components/parameters/RecipeId'
+    post:
+      tags: [Recipes]
+      summary: Рассчитать ингредиенты под нужное количество порций
+      operationId: calculateRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculationRequest'
+      responses:
+        '200':
+          description: Пересчитанный состав рецепта
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Получить список категорий
+      operationId: listCategories
+      responses:
+        '200':
+          description: Список категорий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /ingredients:
+    get:
+      tags: [Ingredients]
+      summary: Получить справочник ингредиентов
+      operationId: listIngredients
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Необязательный поиск по названию ингредиента
+          required: false
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Список ингредиентов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingredient'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /shopping-lists:
+    get:
+      tags: [Shopping lists]
+      summary: Получить списки покупок текущего пользователя
+      operationId: listShoppingLists
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Списки покупок пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShoppingList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Shopping lists]
+      summary: Создать список покупок из выбранных рецептов
+      operationId: createShoppingList
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingListCreateRequest'
+      responses:
+        '201':
+          description: Список покупок создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Один или несколько рецептов не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /shopping-lists/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Идентификатор списка покупок
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+    get:
+      tags: [Shopping lists]
+      summary: Получить список покупок по идентификатору
+      operationId: getShoppingList
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список покупок найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Shopping lists]
+      summary: Удалить собственный список покупок
+      operationId: deleteShoppingList
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Список удалён; тело ответа отсутствует
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RecipeId:
+      name: id
+      in: path
+      required: true
+      description: Идентификатор рецепта
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+  responses:
+    BadRequest:
+      description: Некорректные параметры или тело запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Не выполнена аутентификация или токен недействителен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Недостаточно прав для выполнения операции
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Конфликт данных, например электронная почта уже зарегистрирована
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          example: cook@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+          writeOnly: true
+          example: StrongPassword123
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: cook@example.com
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          example: StrongPassword123
+
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [author, editor]
+          description: При публичной регистрации роль по умолчанию — author.
+
+    AuthResponse:
+      type: object
+      required: [access_token, token_type, user]
+      properties:
+        access_token:
+          type: string
+          description: Токен доступа
+        token_type:
+          type: string
+          enum: [Bearer]
+        user:
+          $ref: '#/components/schemas/User'
+
+    Category:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+
+    Ingredient:
+      type: object
+      required: [id, name, unit]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        unit:
+          type: string
+          maxLength: 20
+          example: г
+
+    RecipeIngredientInput:
+      type: object
+      required: [ingredient_id, quantity]
+      properties:
+        ingredient_id:
+          type: integer
+          format: int64
+          minimum: 1
+        quantity:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Количество ингредиента на servings_base порций
+          example: 200
+
+    RecipeIngredient:
+      type: object
+      required: [ingredient_id, name, quantity, unit]
+      properties:
+        ingredient_id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        quantity:
+          type: number
+          format: double
+        unit:
+          type: string
+
+    RecipeWriteRequest:
+      type: object
+      required: [title, servings_base, category_id, ingredients]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          description: Описание и шаги приготовления
+        cooking_time:
+          type: integer
+          minimum: 1
+          description: Время приготовления в минутах
+        servings_base:
+          type: integer
+          minimum: 1
+          default: 1
+        category_id:
+          type: integer
+          format: int64
+          minimum: 1
+        ingredients:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RecipeIngredientInput'
+
+    Recipe:
+      type: object
+      required: [id, title, servings_base, status, author_id, category_id, ingredients]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        title:
+          type: string
+        description:
+          type: string
+        cooking_time:
+          type: integer
+          nullable: true
+        servings_base:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [draft, pending, published, rejected]
+        author_id:
+          type: string
+          format: uuid
+          readOnly: true
+        moderator_id:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+        category_id:
+          type: integer
+          format: int64
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredient'
+        rejection_reason:
+          type: string
+          nullable: true
+          readOnly: true
+
+    ModerationRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [published, rejected]
+        rejection_reason:
+          type: string
+          maxLength: 2000
+          description: Обязательно при status=rejected; не требуется при status=published.
+
+    CalculationRequest:
+      type: object
+      required: [servings]
+      properties:
+        servings:
+          type: integer
+          minimum: 1
+          description: Желаемое количество порций
+          example: 8
+
+    CalculationResponse:
+      type: object
+      required: [recipe_id, servings, ingredients]
+      properties:
+        recipe_id:
+          type: integer
+          format: int64
+        servings:
+          type: integer
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeIngredient'
+
+    ShoppingListCreateRequest:
+      type: object
+      required: [recipe_ids, total_servings]
+      properties:
+        recipe_ids:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: integer
+            format: int64
+            minimum: 1
+        total_servings:
+          type: integer
+          minimum: 1
+          description: Количество порций, применяемое при расчёте выбранных рецептов.
+
+    ShoppingList:
+      type: object
+      required: [id, recipe_ids, total_servings, created_at, ingredients]
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        recipe_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+        total_servings:
+          type: integer
+          minimum: 1
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ingredients:
+          type: array
+          description: Сводные ингредиенты после пересчёта и объединения одинаковых позиций.
+          items:
+            $ref: '#/components/schemas/RecipeIngredient'
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Поле servings должно быть не меньше 1
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              issue:
+                type: string
