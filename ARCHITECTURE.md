@@ -192,7 +192,7 @@ API предоставляет интерфейс для взаимодейст�
 ![Список эндпоинтов и группировка по тегам](lab2_swagger.png)
 
 **2. Схема запроса для создания рецепта**
-![Схема запроса Request Body для POST /recipes](lab2_swagger1.png)
+![Схема запроса Request Body для POST /recipes](lab2_swagger_1.png)
 
 **3. Успешный ответ и ошибка валидации**
 ![Ответы сервера 201 Created и 400 Bad Request](lab2_swagger2.png)
