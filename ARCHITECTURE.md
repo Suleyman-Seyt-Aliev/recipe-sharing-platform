@@ -112,7 +112,7 @@ flowchart LR
 
 ## 6. Приложение. Визуальная ERD
 
-Картинка ER-диаграммы доступна здесь: ![erd](erd.png)
+Картинка ER-диаграммы доступна здесь: ![erd](lab1_erd.png)
 
 # 7. REST API
 
@@ -189,19 +189,19 @@ API предоставляет интерфейс для взаимодейст�
 ### Скриншоты Swagger UI
 
 **1. Общий список эндпоинтов**
-![Список эндпоинтов и группировка по тегам](swagger.png)
+![Список эндпоинтов и группировка по тегам](lab2_swagger.png)
 
 **2. Схема запроса для создания рецепта**
-![Схема запроса Request Body для POST /recipes](swagger1.png)
+![Схема запроса Request Body для POST /recipes](lab2_swagger1.png)
 
 **3. Успешный ответ и ошибка валидации**
-![Ответы сервера 201 Created и 400 Bad Request](swagger2.png)
+![Ответы сервера 201 Created и 400 Bad Request](lab2_swagger2.png)
 
 **4. Ошибки авторизации и отсутствия данных**
-![Ответы сервера 401 Unauthorized, 403 Forbidden, 404 Not Found](swagger3.png)
+![Ответы сервера 401 Unauthorized, 403 Forbidden, 404 Not Found](lab2_swagger3.png)
 
 **5. Внутренняя ошибка сервера**
-![Ответ сервера 500 Internal Server Error](swagger4.png)
+![Ответ сервера 500 Internal Server Error](lab2_swagger4.png)
 
 
 ## 8. Контейнеризация (Docker)
@@ -220,13 +220,13 @@ API предоставляет интерфейс для взаимодейст�
 ### 8.3. Скриншоты работы Docker
 
 **Собранный Docker-образ (Images):**
-![Docker Image](./docker-image.png)
+![Docker Image](lab4_docker-image.png)
 
 **Запущенный контейнер (Containers):**
-![Docker Container](./docker-container.png)
+![Docker Container](lab4_docker-container.png)
 
 **Проверка работоспособности эндпоинта /health внутри контейнера:**
-![Docker Health](./docker-health.png)
+![Docker Health](lab4_docker-health.png)
 
 ## 10. Результаты проверки ЛР №5 (Скриншоты)
 
